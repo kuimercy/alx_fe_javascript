@@ -98,6 +98,40 @@ function loadQuotes() {
 function saveQuotes() {
     localStorage.setItem('quotes', JSON.stringify(quotes));
 }
+
+function saveSelectedCategory() {
+    const categoryFilter = document.getElementById("categoryFilter").value;
+    localStorage.setItem('selectedCategory', categoryFilter);
+}
+
+//save and restore the last selected category
+function loadSelectedCategory() {
+    const selectedCategory = localStorage.getItem('selectedCategory');
+    if (selectedCategory) {
+        document.getElementById("categoryFilter").value = selectedCategory;
+        filterQuotes();
+    }
+}
+
+document.getElementById("categoryFilter").addEventListener("change", saveSelectedCategory);
+
+// Populate categories 
+function populateCategories() {
+    const categoryFilter = document.getElementById("categoryFilter");
+    const uniqueCategories = [...new Set(quotes.map(quote => quote.category))];
+
+    // Clear existing options except for "All Categories"
+    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+
+    // Add unique categories to the dropdown
+    uniqueCategories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+}
+
 //Add new quotes
 function addQuote() {
   const newQuoteText = document.getElementById("newQuoteText").value;
@@ -112,10 +146,35 @@ function addQuote() {
     alert(" Enter both quote text and category.");
   }
 }
+
+function filterQuotes() {
+    const categoryFilter = document.getElementById("categoryFilter").value;
+    const filteredQuotes = categoryFilter === "all" 
+        ? quotes 
+        : quotes.filter(quote => quote.category === categoryFilter);
+    
+    displayQuotes(filteredQuotes);
+}
+
+function displayQuotes(quotesToDisplay) {
+    const quoteDisplay = document.getElementById("quoteDisplay");
+    quoteDisplay.innerHTML = "";
+
+    quotesToDisplay.forEach(quote => {
+        const quoteElement = document.createElement("p");
+        quoteElement.innerHTML = `"${quote.text}" - <strong>${quote.category}</strong>`;
+        quoteDisplay.appendChild(quoteElement);
+    });
+}
+
+
 // add an event listener
 window.onload = function () {
   loadQuotes();
   displayLastViewedQuote();
+  createAddQuoteForm();
+  populateCategories();
+  loadSelectedCategory();
   document.getElementById("newQuote") .addEventListener("click", showRandomQuote);
 };
 
