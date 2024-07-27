@@ -1,3 +1,5 @@
+const serverUrl = 'https://jsonplaceholder.typicode.com/posts';
+
 //create an array to hold quotes
 const quotes = [
   { text: "Keep calm and carry on.", category: "Life" },
@@ -132,8 +134,52 @@ function populateCategories() {
     });
 }
 
+
+//fetch quotes from server
+async function fetchQuotesFromServer() {
+    try {
+        const response = await fetch(serverUrl);
+        const serverQuotes = await response.json();
+        return serverQuotes;
+    } catch (error) {
+        console.error('Error fetching quotes from server:', error);
+        return [];
+    }
+}
+
+//  sync local quotes with server
+async function syncQuotesWithServer() {
+    const serverQuotes = await fetchQuotesFromServer();
+
+    // Merge server quotes with local quotes, giving precedence to server quotes
+    const mergedQuotes = [...serverQuotes, ...quotes.filter(localQuote => 
+        !serverQuotes.some(serverQuote => serverQuote.text === localQuote.text)
+    )];
+
+    quotes.length = 0;
+    quotes.push(...mergedQuotes);
+    saveQuotes();
+}
+
+
+// create a function to post new quotes to the server
+async function postQuoteToServer(quote) {
+    try {
+        await fetch(serverUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(quote),
+        });
+    } catch (error) {
+        console.error('Error posting quote to server:', error);
+    }
+}
+
+
 //Add new quotes
-function addQuote() {
+ async function addQuote() {
   const newQuoteText = document.getElementById("newQuoteText").value;
   const newQuoteCategory = document.getElementById("newQuoteCategory").value;
 
@@ -167,6 +213,17 @@ function displayQuotes(quotesToDisplay) {
     });
 }
 
+//user  notified of data updates
+function notifyUser(message) {
+    alert(message);
+}
+
+//sync 
+setInterval(async () => {
+    await syncQuotesWithServer();
+    notifyUser('Quotes synced with server!');
+}, 30000);
+
 
 // add an event listener
 window.onload = function () {
@@ -176,6 +233,10 @@ window.onload = function () {
   populateCategories();
   loadSelectedCategory();
   document.getElementById("newQuote") .addEventListener("click", showRandomQuote);
+  document.getElementById("importQuotes").addEventListener("change", importFromJsonFile);
+  document.getElementById("exportQuotes").addEventListener("click", exportQuotes);
+  document.getElementById("categoryFilter").addEventListener("change", filterQuotes);
+  syncQuotesWithServer();
 };
 
 // Initialize the add quote form
